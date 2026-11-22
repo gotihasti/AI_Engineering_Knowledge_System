@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Field Notes — Knowledge Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.0/marked.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f5f2;
+    --surface: #ffffff;
+    --ink: #1c1e1b;
+    --muted: #6e7268;
+    --faint: #9a9d94;
+    --line: #e2e1da;
+    --accent: #26406b;
+    --accent-soft: #e8ecf3;
+    --copper: #a8611f;
+    --copper-soft: #f5ebe0;
+    --danger: #b23b2e;
+    --danger-soft: #f7e9e6;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  a { color: var(--accent); }
+
+  .shell {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ---------- Sidebar ---------- */
+  aside {
+    width: 220px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--line);
+    padding: 1.75rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .brand {
+    font-family: 'Source Serif 4', serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+  }
+  .brand-sub {
+    font-size: 0.78rem;
+    color: var(--faint);
+    margin-bottom: 2.25rem;
+  }
+
+  nav.side-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  nav.side-nav button {
+    appearance: none;
+    border: none;
+    background: none;
+    text-align: left;
+    font-family: inherit;
+    font-size: 0.92rem;
+    color: var(--muted);
+    padding: 0.55rem 0.6rem;
+    border-left: 2px solid transparent;
+    cursor: pointer;
+    border-radius: 0 4px 4px 0;
+  }
+  nav.side-nav button:hover { background: var(--accent-soft); color: var(--ink); }
+  nav.side-nav button.active {
+    color: var(--ink);
+    font-weight: 600;
+    border-left-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+  }
+  .conn-line {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .conn-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--faint);
+    flex-shrink: 0;
+  }
+  .conn-dot.ok { background: #3c6b45; }
+  .conn-dot.bad { background: var(--danger); }
+
+  details.setup {
+    margin-top: 0.5rem;
+    font-size: 0.76rem;
+    color: var(--faint);
+  }
+  details.setup summary { cursor: pointer; }
+  details.setup .mini-field {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.4rem;
+  }
+  details.setup input {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    width: 130px;
+  }
+
+  /* ---------- Main ---------- */
+  main {
+    flex: 1;
+    max-width: 760px;
+    padding: 2.5rem 2.5rem 4rem;
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  h1.page-title {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600;
+    font-size: 1.7rem;
+    margin: 0 0 0.3rem;
+  }
+  .page-sub {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin: 0 0 2rem;
+    max-width: 52ch;
+  }
+
+  /* Inputs */
+  textarea.field-input, input.field-input {
+    width: 100%;
+    font-family: inherit;
+    font-size: 1rem;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--ink);
+  }
+  textarea.field-input { resize: vertical; }
+  .field-input:focus { outline: none; border-color: var(--accent); }
+
+  .btn {
+    appearance: none;
+    border: none;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 0.92rem;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    padding: 0.65rem 1.4rem;
+  }
+  .btn-primary:hover { background: #1c3156; }
+  .btn-primary:disabled { background: var(--line); color: var(--faint); cursor: default; }
+
+  .btn-ghost {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 0.4rem 0.85rem;
+    font-size: 0.82rem;
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-ghost.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* Ask */
+  .ask-row { margin-bottom: 0.75rem; }
+
+  .examples { margin-top: 1.5rem; }
+  .examples .caption { font-size: 0.8rem; color: var(--faint); margin-bottom: 0.5rem; }
+  .example-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    padding: 0.6rem 0.1rem;
+    font-family: inherit;
+    font-size: 0.92rem;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .example-item:hover { color: var(--accent); }
+
+  .thinking { margin-top: 1.5rem; color: var(--muted); font-size: 0.9rem; }
+
+  .answer {
+    margin-top: 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 1.3rem 1.5rem;
+    font-size: 0.98rem;
+    line-height: 1.65;
+  }
+  .answer p:first-child { margin-top: 0; }
+  .answer p:last-child { margin-bottom: 0; }
+  .answer code {
+    background: var(--accent-soft);
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.88em;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .error-msg {
+    margin-top: 1.2rem;
+    background: var(--danger-soft);
+    color: var(--danger);
+    border-radius: 6px;
+    padding: 0.9rem 1.1rem;
+    font-size: 0.92rem;
+  }
+
+  /* Import */
+  .import-method {
+    margin-bottom: 1.75rem;
+  }
+  .import-method .caption {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.6rem;
+  }
+
+  .dropzone {
+    border: 1.5px dashed var(--line);
+    border-radius: 8px;
+    padding: 2.2rem 1.5rem;
+    text-align: center;
+    background: var(--surface);
+    cursor: pointer;
+  }
+  .dropzone:hover, .dropzone.dragover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .dropzone .main-line { font-weight: 600; font-size: 0.98rem; margin: 0 0 0.2rem; }
+  .dropzone .sub-line { color: var(--faint); font-size: 0.82rem; margin: 0; }
+  #fileInput { display: none; }
+
+  .url-row { display: flex; gap: 0.6rem; }
+  .url-row input { flex: 1; }
+
+  .divider-or {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--faint);
+    font-size: 0.78rem;
+    margin: 1.5rem 0;
+  }
+  .divider-or::before, .divider-or::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .progress-card {
+    margin-top: 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.2rem 1.4rem;
+  }
+  .progress-card .source-name {
+    font-weight: 600;
+    margin-bottom: 0.9rem;
+    font-size: 0.92rem;
+    word-break: break-all;
+  }
+  .steps { display: flex; flex-direction: column; gap: 0.55rem; }
+  .step { display: flex; align-items: center; gap: 0.55rem; font-size: 0.88rem; color: var(--faint); }
+  .step .icon {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem;
+    flex-shrink: 0;
+  }
+  .step.active { color: var(--ink); font-weight: 600; }
+  .step.active .icon { border-color: var(--copper); color: var(--copper); }
+  .step.done { color: var(--ink); }
+  .step.done .icon { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .success-banner {
+    margin-top: 1.3rem;
+    background: var(--accent-soft);
+    border-radius: 6px;
+    padding: 1rem 1.2rem;
+    font-size: 0.92rem;
+  }
+  .success-banner strong { display: block; margin: 0.3rem 0 0.7rem; font-size: 0.97rem; }
+
+  /* Search */
+  .search-row { display: flex; gap: 0.6rem; margin-bottom: 0.6rem; }
+  .search-row input { flex: 1; }
+  select.topic-select {
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--ink);
+    max-width: 200px;
+  }
+
+  .result-count { color: var(--muted); font-size: 0.85rem; margin: 1rem 0; }
+
+  /* Cards (knowledge items only) */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.3rem 1.4rem;
+    margin-bottom: 0.9rem;
+  }
+  .card h3 { margin: 0 0 0.4rem; font-size: 1.05rem; font-weight: 600; }
+  .card-section { margin-top: 0.8rem; }
+  .card-section .label {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.2rem;
+  }
+  .card-section p, .card-section ul { margin: 0; font-size: 0.93rem; }
+  .card-section ul { padding-left: 1.1rem; }
+  .card-section li { margin-bottom: 0.15rem; }
+
+  .tags { margin-top: 0.9rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .tag {
+    background: var(--copper-soft);
+    color: var(--copper);
+    font-size: 0.73rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+  }
+
+  .card-footer {
+    margin-top: 1rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .confidence-pill { font-size: 0.78rem; color: var(--faint); }
+  .review-actions { display: flex; gap: 0.5rem; }
+
+  .empty { padding: 2.5rem 0; color: var(--faint); font-size: 0.92rem; }
+
+  .library-toggle { display: flex; gap: 0.5rem; margin-bottom: 1.4rem; }
+
+  @media (max-width: 720px) {
+    .shell { flex-direction: column; }
+    aside { width: 100%; border-right: none; border-bottom: 1px solid var(--line); flex-direction: row; align-items: center; padding: 1rem; }
+    .brand-sub { display: none; }
+    .brand { margin-bottom: 0; margin-right: 1.5rem; }
+    nav.side-nav { flex-direction: row; gap: 0.3rem; }
+    .sidebar-footer { display: none; }
+    main { padding: 1.5rem 1.25rem 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <aside>
+    <div class="brand">Field Notes</div>
+    <div class="brand-sub">Personal engineering knowledge library</div>
+
+    <nav class="side-nav">
+      <button class="active" data-panel="ask">Ask</button>
+      <button data-panel="import">Import</button>
+      <button data-panel="search">Search</button>
+      <button data-panel="library">Library</button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="conn-line"><span class="conn-dot" id="connDot"></span><span id="connText">Checking connection…</span></div>
+      <details class="setup">
+        <summary>Server address</summary>
+        <div class="mini-field">
+          <input type="text" id="apiBase" value="http://127.0.0.1:8000">
+          <button class="btn btn-ghost" onclick="checkConnection()">Retry</button>
+        </div>
+      </details>
+    </div>
+  </aside>
+
+  <main>
+
+    <!-- ASK -->
+    <section class="panel active" id="panel-ask">
+      <h1 class="page-title">Ask your library</h1>
+      <p class="page-sub">Ask a question in plain language. The answer is drawn only from what you've saved, with sources cited.</p>
+
+      <div class="ask-row">
+        <textarea class="field-input" id="askInput" rows="2" placeholder="e.g. What should I use for text or time-series data?"></textarea>
+      </div>
+      <button class="btn btn-primary" id="askBtn" onclick="askQuestion()">Ask</button>
+
+      <div class="examples" id="examplesWrap">
+        <div class="caption">Examples</div>
+      </div>
+
+      <div id="askThinking"></div>
+      <div id="askOutput"></div>
+    </section>
+
+    <!-- IMPORT -->
+    <section class="panel" id="panel-import">
+      <h1 class="page-title">Import a video</h1>
+      <p class="page-sub">Add a video file, or bring one in from a link. It's processed automatically — audio extracted, transcribed, and summarized into a knowledge record.</p>
+
+      <div class="import-method">
+        <div class="caption">From a file</div>
+        <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+          <p class="main-line">Choose a video, or drag one here</p>
+          <p class="sub-line">MP4, MOV, WEBM or MKV — up to 200MB</p>
+        </div>
+        <input type="file" id="fileInput" accept=".mp4,.mov,.webm,.mkv">
+      </div>
+
+      <div class="divider-or">or</div>
+
+      <div class="import-method">
+        <div class="caption">From a link</div>
+        <div class="url-row">
+          <input type="text" class="field-input" id="urlInput" placeholder="Paste a YouTube link…">
+          <button class="btn btn-primary" onclick="submitUrl()">Import</button>
+        </div>
+      </div>
+
+      <div id="uploadProgress"></div>
+      <div id="uploadError"></div>
+    </section>
+
+    <!-- SEARCH -->
+    <section class="panel" id="panel-search">
+      <h1 class="page-title">Search</h1>
+      <p class="page-sub">Find saved items by keyword, topic, or both together.</p>
+
+      <div class="search-row">
+        <input type="text" class="field-input" id="searchQ" placeholder="Search for a word or phrase…">
+        <select class="topic-select" id="topicSelect">
+          <option value="">Any topic</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="runSearch()">Search</button>
+      <div class="result-count" id="searchCount"></div>
+      <div id="searchResults"></div>
+    </section>
+
+    <!-- LIBRARY -->
+    <section class="panel" id="panel-library">
+      <h1 class="page-title">Library</h1>
+      <p class="page-sub">Everything you've saved, organized by review status.</p>
+
+      <div class="library-toggle">
+        <button class="btn btn-ghost" id="btnApproved" onclick="loadLibrary('approved')">Saved</button>
+        <button class="btn btn-ghost" id="btnPending" onclick="loadLibrary('pending')">Needs review</button>
+      </div>
+      <div class="result-count" id="libraryCount"></div>
+      <div id="libraryResults"></div>
+    </section>
+
+  </main>
+
+</div>
+
+<script>
+  const EXAMPLE_QUESTIONS = [
+    "What should I use for sequential data like text or time series?",
+    "What's the difference between an AI agent and Agent AI?",
+    "What have I saved about free AI/ML training resources?",
+    "What have I saved about reducing hallucinations in RAG?"
+  ];
+
+  function apiBase() {
+    return document.getElementById('apiBase').value.replace(/\/$/, '');
+  }
+
+  // Nav
+  function showPanel(name) {
+    document.querySelectorAll('nav.side-nav button').forEach(b => b.classList.toggle('active', b.dataset.panel === name));
+    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
+  }
+  document.querySelectorAll('nav.side-nav button').forEach(btn => {
+    btn.addEventListener('click', () => showPanel(btn.dataset.panel));
+  });
+
+  // Example questions
+  const examplesWrap = document.getElementById('examplesWrap');
+  EXAMPLE_QUESTIONS.forEach(q => {
+    const el = document.createElement('button');
+    el.className = 'example-item';
+    el.textContent = q;
+    el.onclick = () => { document.getElementById('askInput').value = q; askQuestion(); };
+    examplesWrap.appendChild(el);
+  });
+
+  // Connection
+  async function checkConnection() {
+    const dot = document.getElementById('connDot');
+    const text = document.getElementById('connText');
+    dot.className = 'conn-dot';
+    text.textContent = 'Checking connection…';
+    try {
+      const res = await fetch(apiBase() + '/knowledge/approved');
+      if (!res.ok) throw new Error('bad response');
+      dot.className = 'conn-dot ok';
+      text.textContent = 'Connected';
+      populateTopics();
+    } catch (e) {
+      dot.className = 'conn-dot bad';
+      text.textContent = "Can't reach server";
+    }
+  }
+  checkConnection();
+
+  async function populateTopics() {
+    try {
+      const res = await fetch(apiBase() + '/knowledge/approved');
+      const data = await res.json();
+      const topics = new Set();
+      (data.items || []).forEach(item => (item.knowledge.topics || []).forEach(t => topics.add(t)));
+      const select = document.getElementById('topicSelect');
+      select.innerHTML = '<option value="">Any topic</option>';
+      Array.from(topics).sort().forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t; opt.textContent = t;
+        select.appendChild(opt);
+      });
+    } catch (e) { /* ignore */ }
+  }
+
+  // --- IMPORT: file ---
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) uploadFile(fileInput.files[0]);
+  });
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]);
+  });
+
+  const PIPELINE_STEPS = [
+    { label: 'Fetching source' },
+    { label: 'Extracting audio' },
+    { label: 'Transcribing speech' },
+    { label: 'Extracting knowledge' },
+  ];
+
+  function renderSteps(activeIndex) {
+    return PIPELINE_STEPS.map((s, i) => {
+      let cls = '', icon = i + 1;
+      if (i < activeIndex) { cls = 'done'; icon = '✓'; }
+      else if (i === activeIndex) { cls = 'active'; }
+      return `<div class="step ${cls}"><span class="icon">${icon}</span><span>${s.label}</span></div>`;
+    }).join('');
+  }
+
+  function startProgress(label) {
+    const progressEl = document.getElementById('uploadProgress');
+    document.getElementById('uploadError').innerHTML = '';
+    progressEl.innerHTML = `
+      <div class="progress-card">
+        <div class="source-name">${escapeHtml(label)}</div>
+        <div class="steps" id="stepsList">${renderSteps(0)}</div>
+      </div>
+    `;
+    let fakeStep = 0;
+    return setInterval(() => {
+      if (fakeStep < PIPELINE_STEPS.length - 1) {
+        fakeStep++;
+        document.getElementById('stepsList').innerHTML = renderSteps(fakeStep);
+      }
+    }, 4000);
+  }
+
+  function finishProgress(problemSummary, askSeed) {
+    document.getElementById('stepsList').innerHTML = renderSteps(PIPELINE_STEPS.length);
+    document.getElementById('uploadProgress').innerHTML += `
+      <div class="success-banner">
+        Processed successfully.
+        <strong>${escapeHtml(problemSummary || 'Knowledge extracted.')}</strong>
+        <button class="btn btn-ghost" onclick="goAsk('${escapeHtml(askSeed)}')">Ask about this →</button>
+      </div>
+    `;
+    populateTopics();
+    loadLibrary('approved');
+  }
+
+  function failProgress(message) {
+    document.getElementById('uploadError').innerHTML = `<div class="error-msg">${escapeHtml(message)}</div>`;
+  }
+
+  function goAsk(seed) {
+    showPanel('ask');
+    document.getElementById('askInput').value = seed;
+    askQuestion();
+  }
+
+  async function uploadFile(file) {
+    const timer = startProgress(file.name);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(apiBase() + '/upload-and-process', { method: 'POST', body: formData });
+      const data = await res.json();
+      clearInterval(timer);
+      if (!res.ok) throw new Error(data.detail || 'Upload failed.');
+      finishProgress(data.knowledge?.problem, `What was in the video I just uploaded (${file.name})?`);
+    } catch (e) {
+      clearInterval(timer);
+      failProgress('Something went wrong: ' + e.message);
+    } finally {
+      fileInput.value = '';
+    }
+  }
+
+  // --- IMPORT: url ---
+  async function submitUrl() {
+    const url = document.getElementById('urlInput').value.trim();
+    if (!url) return;
+
+    const timer = startProgress(url);
+    try {
+      const res = await fetch(apiBase() + '/upload-from-url?url=' + encodeURIComponent(url), { method: 'POST' });
+      const data = await res.json();
+      clearInterval(timer);
+      if (!res.ok) throw new Error(data.detail || 'Import failed.');
+      finishProgress(data.knowledge?.problem, `What was in the video from ${url}?`);
+      document.getElementById('urlInput').value = '';
+    } catch (e) {
+      clearInterval(timer);
+      failProgress('Could not import that link: ' + e.message);
+    }
+  }
+
+  // --- ASK ---
+  async function askQuestion() {
+    const question = document.getElementById('askInput').value.trim();
+    const thinking = document.getElementById('askThinking');
+    const output = document.getElementById('askOutput');
+    const btn = document.getElementById('askBtn');
+    if (!question) return;
+
+    btn.disabled = true;
+    output.innerHTML = '';
+    thinking.innerHTML = '<div class="thinking">Searching your saved knowledge…</div>';
+
+    try {
+      const url = apiBase() + '/knowledge/ask?question=' + encodeURIComponent(question);
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Something went wrong.');
+      thinking.innerHTML = '';
+      output.innerHTML = '<div class="answer">' + marked.parse(data.answer || 'No answer returned.') + '</div>';
+    } catch (e) {
+      thinking.innerHTML = '';
+      output.innerHTML = '<div class="error-msg">Couldn\'t get an answer — ' + escapeHtml(e.message) + '</div>';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // --- SEARCH ---
+  async function runSearch() {
+    const q = document.getElementById('searchQ').value.trim();
+    const topic = document.getElementById('topicSelect').value;
+    const countEl = document.getElementById('searchCount');
+    const resultsEl = document.getElementById('searchResults');
+
+    if (!q && !topic) {
+      countEl.textContent = 'Type something to search for, or pick a topic.';
+      resultsEl.innerHTML = '';
+      return;
+    }
+
+    countEl.textContent = 'Searching…';
+    resultsEl.innerHTML = '';
+
+    try {
+      let url;
+      if (topic && q) url = apiBase() + '/knowledge/filter?topic=' + encodeURIComponent(topic) + '&q=' + encodeURIComponent(q);
+      else if (topic) url = apiBase() + '/knowledge/by-topic/' + encodeURIComponent(topic);
+      else url = apiBase() + '/knowledge/search?q=' + encodeURIComponent(q);
+
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Search failed.');
+
+      const items = data.items || data.results || [];
+      countEl.textContent = items.length ? `${items.length} match${items.length === 1 ? '' : 'es'}` : '';
+      renderCards(items, resultsEl, false, 'No matches. Try a different word, or clear the topic filter.');
+    } catch (e) {
+      countEl.textContent = '';
+      resultsEl.innerHTML = '<div class="error-msg">' + escapeHtml(e.message) + '</div>';
+    }
+  }
+
+  // --- LIBRARY ---
+  async function loadLibrary(kind) {
+    document.getElementById('btnApproved').style.borderColor = kind === 'approved' ? 'var(--accent)' : 'var(--line)';
+    document.getElementById('btnPending').style.borderColor = kind === 'pending' ? 'var(--accent)' : 'var(--line)';
+
+    const countEl = document.getElementById('libraryCount');
+    const resultsEl = document.getElementById('libraryResults');
+    countEl.textContent = 'Loading…';
+    resultsEl.innerHTML = '';
+
+    const endpoint = kind === 'approved' ? '/knowledge/approved' : '/knowledge/pending-review';
+
+    try {
+      const res = await fetch(apiBase() + endpoint);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Could not load your library.');
+
+      const items = data.items || [];
+      const emptyMsg = kind === 'approved'
+        ? 'Nothing saved yet. Import a video to see it here.'
+        : 'Nothing waiting for review right now.';
+      countEl.textContent = items.length ? `${items.length} item${items.length === 1 ? '' : 's'}` : '';
+      renderCards(items, resultsEl, kind === 'pending', emptyMsg);
+    } catch (e) {
+      countEl.textContent = '';
+      resultsEl.innerHTML = '<div class="error-msg">' + escapeHtml(e.message) + '</div>';
+    }
+  }
+  loadLibrary('approved');
+
+  function renderCards(items, container, showReviewActions, emptyMessage) {
+    container.innerHTML = '';
+    if (!items.length) {
+      container.innerHTML = `<div class="empty">${escapeHtml(emptyMessage)}</div>`;
+      return;
+    }
+
+    items.forEach(item => {
+      const k = item.knowledge || {};
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const solution = (k.solution || []).map(s => `<li>${escapeHtml(s)}</li>`).join('');
+      const tradeoffs = (k.tradeoffs || []).map(s => `<li>${escapeHtml(s)}</li>`).join('');
+      const tags = (k.topics || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
+
+      card.innerHTML = `
+        <h3>${escapeHtml(k.problem || 'Untitled item')}</h3>
+        ${k.root_cause ? `<div class="card-section"><div class="label">Why it happens</div><p>${escapeHtml(k.root_cause)}</p></div>` : ''}
+        ${solution ? `<div class="card-section"><div class="label">What to do</div><ul>${solution}</ul></div>` : ''}
+        ${tradeoffs ? `<div class="card-section"><div class="label">Tradeoffs</div><ul>${tradeoffs}</ul></div>` : ''}
+        ${tags ? `<div class="tags">${tags}</div>` : ''}
+        <div class="card-footer">
+          <span class="confidence-pill">Confidence ${k.confidence != null ? Math.round(k.confidence * 100) + '%' : '—'}</span>
+          ${showReviewActions ? `
+            <div class="review-actions">
+              <button class="btn btn-ghost" onclick="reviewItem('${item.filename}','approved',this)">Approve</button>
+              <button class="btn btn-ghost danger" onclick="reviewItem('${item.filename}','rejected',this)">Reject</button>
+            </div>` : ''}
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  async function reviewItem(filename, status, btn) {
+    const card = btn.closest('.card');
+    card.style.opacity = '0.4';
+    try {
+      const res = await fetch(apiBase() + '/review-knowledge/' + encodeURIComponent(filename), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ review_status: status })
+      });
+      if (!res.ok) throw new Error('Could not update.');
+      loadLibrary('pending');
+    } catch (e) {
+      alert('Something went wrong: ' + e.message);
+      card.style.opacity = '1';
+    }
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+</script>
+
+</body>
+</html>
