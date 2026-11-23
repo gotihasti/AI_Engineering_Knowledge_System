@@ -1,3 +1,7 @@
+
+
+https://github.com/user-attachments/assets/86cb6165-7305-4a32-a2fb-acb8d7ee332d
+
 # AI Engineering Knowledge System
 
 Turn short technical videos (reels, shorts, tutorials) into a structured, searchable knowledge library.
